@@ -14,33 +14,67 @@
  * limitations under the License.
  */
 
-package com.example.inventory.ui.item
+package com.example.inventory.ui.item.item_edit
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.inventory.data.ItemsRepository
+import com.example.inventory.ui.item.item_detail.ItemDetails
+import com.example.inventory.ui.item.item_entry.ItemUiState
+import com.example.inventory.ui.item.mappers.toItem
+import com.example.inventory.ui.item.mappers.toItemUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * ViewModel to retrieve and update an item from the [ItemsRepository]'s data source.
  */
-class ItemEditViewModel(
+@HiltViewModel
+class ItemEditViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val itemsRepository: ItemsRepository
 ) : ViewModel() {
 
     /**
      * Holds current item ui state
      */
-    var itemUiState by mutableStateOf(ItemUiState())
+    var itemUiState by mutableStateOf(ItemUiState(isLoading = true))
         private set
 
     private val itemId: Int = checkNotNull(savedStateHandle[ItemEditDestination.itemIdArg])
 
+    init {
+        viewModelScope.launch {
+            itemUiState = itemsRepository.getItem(itemId)
+                .filterNotNull()
+                .first()
+                .toItemUiState(isEntryValid = true)
+        }
+    }
+
+    fun updateUiState(itemDetails: ItemDetails) {
+        itemUiState = ItemUiState(
+            itemDetails = itemDetails,
+            isEntryValid = validateInput(itemDetails)
+        )
+    }
+
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         return with(uiState) {
             name.isNotBlank() && price.isNotBlank() && quantity.isNotBlank()
+        }
+    }
+
+    fun updateItem() = viewModelScope.launch {
+        if (validateInput()) {
+            itemsRepository.updateItem(itemUiState.itemDetails.toItem())
         }
     }
 }

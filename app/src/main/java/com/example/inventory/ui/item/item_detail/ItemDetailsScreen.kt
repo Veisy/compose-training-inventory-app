@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.inventory.ui.item
+package com.example.inventory.ui.item.item_detail
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,9 +50,12 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.inventory.InventoryTopAppBar
 import com.example.inventory.R
-import com.example.inventory.data.Item
+import com.example.inventory.data.ItemEntity
+import com.example.inventory.ui.item.item_entry.formatedPrice
+import com.example.inventory.ui.item.mappers.toItem
 import com.example.inventory.ui.navigation.NavigationDestination
 import com.example.inventory.ui.theme.InventoryTheme
 
@@ -67,8 +71,10 @@ object ItemDetailsDestination : NavigationDestination {
 fun ItemDetailsScreen(
     navigateToEditItem: (Int) -> Unit,
     navigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ItemDetailsViewModel = hiltViewModel()
 ) {
+    val itemDetailsUiState by viewModel.itemDetailsUiState.collectAsState()
     Scaffold(
         topBar = {
             InventoryTopAppBar(
@@ -78,7 +84,7 @@ fun ItemDetailsScreen(
             )
         }, floatingActionButton = {
             FloatingActionButton(
-                onClick = { navigateToEditItem(0) },
+                onClick = { navigateToEditItem(itemDetailsUiState.itemDetails.id) },
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_large))
 
@@ -91,9 +97,12 @@ fun ItemDetailsScreen(
         }, modifier = modifier
     ) { innerPadding ->
         ItemDetailsBody(
-            itemDetailsUiState = ItemDetailsUiState(),
-            onSellItem = { },
-            onDelete = { },
+            itemDetailsUiState = itemDetailsUiState,
+            onSellItem = { viewModel.reduceQuantityByOne() },
+            onDelete = {
+                viewModel.deleteItem()
+                navigateBack()
+            },
             modifier = Modifier
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
@@ -122,7 +131,7 @@ private fun ItemDetailsBody(
             onClick = onSellItem,
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.small,
-            enabled = true
+            enabled = !itemDetailsUiState.outOfStock
         ) {
             Text(stringResource(R.string.sell))
         }
@@ -148,7 +157,7 @@ private fun ItemDetailsBody(
 
 @Composable
 fun ItemDetails(
-    item: Item, modifier: Modifier = Modifier
+    item: ItemEntity, modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier,
@@ -230,7 +239,12 @@ fun ItemDetailsScreenPreview() {
         ItemDetailsBody(
             ItemDetailsUiState(
                 outOfStock = true,
-                itemDetails = ItemDetails(1, "Pen", "$100", "10")
+                itemDetails = ItemDetails(
+                    1,
+                    "Pen",
+                    "$100",
+                    "10"
+                )
             ),
             onSellItem = {},
             onDelete = {}

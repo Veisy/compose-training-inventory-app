@@ -16,23 +16,22 @@
 
 package com.example.inventory.data
 
-import android.content.Context
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
 
 /**
- * App container for Dependency injection.
+ * Entity data class represents a single row in the database.
  */
-interface AppContainer {
-    val itemsRepository: ItemsRepository
-}
-
-/**
- * [AppContainer] implementation that provides instance of [OfflineItemsRepository]
- */
-class AppDataContainer(private val context: Context) : AppContainer {
-    /**
-     * Implementation for [ItemsRepository]
-     */
-    override val itemsRepository: ItemsRepository by lazy {
-        OfflineItemsRepository()
-    }
-}
+@Entity(tableName = "item")
+data class ItemEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    @ColumnInfo(name = "name")
+    val name: String,
+    @ColumnInfo(name = "price")
+    val price: Double,
+    @ColumnInfo(name = "quantity")
+    val quantity: Int
+)

@@ -16,4 +16,18 @@
 
 package com.example.inventory.data
 
-class OfflineItemsRepository : ItemsRepository
+import javax.inject.Inject
+
+class OfflineItemsRepository @Inject constructor(
+    private val itemDao: ItemDao,
+) : ItemsRepository {
+    override fun getAllItems() = itemDao.getAllItems()
+
+    override fun getItem(itemId: Int) = itemDao.getItem(itemId)
+
+    override suspend fun addItem(item: ItemEntity) = itemDao.insert(item)
+
+    override suspend fun updateItem(item: ItemEntity) = itemDao.update(item)
+
+    override suspend fun deleteItem(item: ItemEntity) = itemDao.delete(item)
+}

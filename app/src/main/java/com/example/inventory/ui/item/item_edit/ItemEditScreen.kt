@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.example.inventory.ui.item
+package com.example.inventory.ui.item.item_edit
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.inventory.InventoryTopAppBar
 import com.example.inventory.R
-import com.example.inventory.ui.AppViewModelProvider
+import com.example.inventory.ui.item.item_entry.ItemEntryBody
 import com.example.inventory.ui.navigation.NavigationDestination
 import com.example.inventory.ui.theme.InventoryTheme
 
@@ -43,7 +45,7 @@ fun ItemEditScreen(
     navigateBack: () -> Unit,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ItemEditViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: ItemEditViewModel = hiltViewModel()
 ) {
     Scaffold(
         topBar = {
@@ -55,12 +57,21 @@ fun ItemEditScreen(
         },
         modifier = modifier
     ) { innerPadding ->
-        ItemEntryBody(
-            itemUiState = viewModel.itemUiState,
-            onItemValueChange = { },
-            onSaveClick = { },
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(innerPadding)
-        )
+        ) {
+            if (!viewModel.itemUiState.isLoading) {
+                ItemEntryBody(
+                    itemUiState = viewModel.itemUiState,
+                    onItemValueChange = { viewModel.updateUiState(it) },
+                    onSaveClick = {
+                        viewModel.updateItem()
+                        navigateBack()
+                    },
+                )
+            }
+        }
     }
 }
 
